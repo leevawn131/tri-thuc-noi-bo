@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KnowledgeHub - Hỏi đáp tri thức nội bộ</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --line:#e4e7ec; --text:#1d2433; --muted:#667085;
+    --brand:#2f5bea; --brand-soft:#e9eefd; --ok:#12805c; --ok-soft:#e3f5ee;
+    --warn:#b25e09; --warn-soft:#fdf1e0; --bad:#c0362c; --bad-soft:#fde9e7;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f131a; --panel:#171c26; --line:#2a3140; --text:#e8ecf4; --muted:#98a2b3;
+      --brand:#6f8cff; --brand-soft:#1d2744; --ok:#4cc79b; --ok-soft:#14302a;
+      --warn:#f0a94f; --warn-soft:#352612; --bad:#f2837a; --bad-soft:#3a1c1a;
+      --shadow:none;
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+       background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;height:100vh;overflow:hidden}
+  button{font:inherit;cursor:pointer}
+  input,select,textarea{font:inherit;color:inherit}
+
+  /* layout */
+  .app{display:grid;grid-template-columns:248px 1fr;height:100vh}
+  .sidebar{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:16px 12px}
+  .logo{display:flex;align-items:center;gap:10px;padding:4px 8px 16px;font-weight:700;font-size:16px}
+  .logo i{width:30px;height:30px;border-radius:8px;background:var(--brand);color:#fff;display:grid;place-items:center;font-style:normal;font-size:16px}
+  .nav-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:14px 10px 6px}
+  .nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--text);text-decoration:none;cursor:pointer}
+  .nav a:hover{background:var(--bg)}
+  .nav a.active{background:var(--brand-soft);color:var(--brand);font-weight:600}
+  .nav a .badge{margin-left:auto}
+  .side-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;border-top:1px solid var(--line)}
+  .avatar{width:32px;height:32px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+  .side-foot small{color:var(--muted);display:block;font-size:12px}
+
+  .main{display:flex;flex-direction:column;min-width:0;height:100vh}
+  .topbar{height:56px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 24px}
+  .topbar h1{font-size:16px;font-weight:600}
+  .topbar .sp{flex:1}
+  .search{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 12px;width:280px;color:var(--muted)}
+  .search input{border:0;background:transparent;outline:0;width:100%}
+  .content{flex:1;overflow:auto;padding:24px}
+  .view{display:none}
+  .view.active{display:block}
+  .view.chat.active{display:flex}
+
+  /* common */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .card-h h3{font-size:14px;font-weight:600}
+  .card-b{padding:18px}
+  .btn{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:7px 14px;border-radius:8px;font-weight:500}
+  .btn:hover{background:var(--bg)}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.sm{padding:4px 10px;font-size:12px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;background:var(--bg);color:var(--muted)}
+  .badge.ok{background:var(--ok-soft);color:var(--ok)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.bad{background:var(--bad-soft);color:var(--bad)}
+  .badge.brand{background:var(--brand-soft);color:var(--brand)}
+  .muted{color:var(--muted)}
+  .row{display:flex;gap:12px;align-items:center}
+  .grid{display:grid;gap:16px}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .g2{grid-template-columns:2fr 1fr}
+  .page-head{display:flex;align-items:flex-end;gap:12px;margin-bottom:18px}
+  .page-head h2{font-size:20px}
+  .page-head p{color:var(--muted)}
+  .page-head .sp{flex:1}
+  table{width:100%;border-collapse:collapse}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;padding:10px 18px;border-bottom:1px solid var(--line);font-weight:600}
+  td{padding:12px 18px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:var(--bg)}
+  .select,.input{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 12px;outline:0}
+  .input:focus,.select:focus{border-color:var(--brand)}
+
+  /* chat */
+  .view.chat{gap:0;height:calc(100% + 48px);margin:-24px;}
+  .chat-list{width:260px;background:var(--panel);border-right:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:6px;overflow:auto;flex:none}
+  .chat-list .btn{width:100%;margin-bottom:8px}
+  .chat-item{padding:9px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chat-item:hover{background:var(--bg)}
+  .chat-item.active{background:var(--brand-soft);color:var(--brand);font-weight:600}
+  .chat-pane{flex:1;display:flex;flex-direction:column;min-width:0}
+  .chat-scroll{flex:1;overflow:auto;padding:24px 24px 8px}
+  .chat-inner{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+  .msg{display:flex;gap:12px}
+  .msg.user{justify-content:flex-end}
+  .bubble-u{background:var(--brand);color:#fff;padding:10px 16px;border-radius:16px 16px 4px 16px;max-width:70%}
+  .bot-ico{width:32px;height:32px;border-radius:8px;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;flex:none;font-weight:700}
+  .bubble-b{background:var(--panel);border:1px solid var(--line);padding:16px 18px;border-radius:4px 16px 16px 16px;box-shadow:var(--shadow);flex:1;min-width:0}
+  .bubble-b p{margin-bottom:10px}
+  .bubble-b ol{margin:0 0 12px 20px}
+  .bubble-b li{margin-bottom:4px}
+  .cite{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:5px;background:var(--brand-soft);color:var(--brand);font-size:11px;font-weight:700;vertical-align:super;margin-left:2px}
+  .sources{border-top:1px dashed var(--line);padding-top:12px;margin-top:6px}
+  .sources h4{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+  .src{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:var(--bg)}
+  .src b{display:block}
+  .src small{color:var(--muted)}
+  .feedback{display:flex;gap:8px;margin-top:12px;align-items:center;color:var(--muted);font-size:13px}
+  .refuse{background:var(--warn-soft);border:1px solid var(--warn);color:var(--text);padding:12px 14px;border-radius:10px}
+  .composer{padding:12px 24px 20px}
+  .composer-in{max-width:780px;margin:0 auto}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 12px;font-size:13px}
+  .box{display:flex;gap:10px;align-items:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;box-shadow:var(--shadow)}
+  .box textarea{flex:1;border:0;outline:0;resize:none;background:transparent;min-height:24px;max-height:120px}
+  .hint{text-align:center;color:var(--muted);font-size:12px;margin-top:8px}
+
+  /* stats */
+  .stat{padding:16px 18px}
+  .stat small{color:var(--muted)}
+  .stat strong{display:block;font-size:26px;margin:2px 0}
+  .bars{display:flex;align-items:flex-end;gap:10px;height:180px;padding:8px 4px 0}
+  .bars div{flex:1;background:var(--brand-soft);border-radius:6px 6px 0 0;position:relative;border-top:3px solid var(--brand)}
+  .bars span{position:absolute;bottom:-22px;left:0;right:0;text-align:center;font-size:12px;color:var(--muted)}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .bar-row .lbl{width:110px;font-size:13px}
+  .bar-row .track{flex:1;height:8px;background:var(--bg);border-radius:99px;overflow:hidden}
+  .bar-row .track i{display:block;height:100%;background:var(--brand);border-radius:99px}
+  .bar-row .num{width:44px;text-align:right;color:var(--muted);font-size:13px}
+
+  /* login */
+  .login{position:fixed;inset:0;background:var(--bg);display:none;place-items:center;z-index:10}
+  .login.active{display:grid}
+  .login-card{width:380px;padding:32px}
+  .login-card .logo{justify-content:center;padding-bottom:8px;font-size:20px}
+  .login-card p{text-align:center;color:var(--muted);margin-bottom:22px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-weight:600;margin-bottom:6px;font-size:13px}
+  .field .input{width:100%}
+  .divider{text-align:center;color:var(--muted);margin:14px 0;font-size:12px}
+
+  /* toggle */
+  .tg{width:36px;height:20px;border-radius:99px;background:var(--line);position:relative;display:inline-block}
+  .tg::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s}
+  .tg.on{background:var(--ok)}
+  .tg.on::after{left:18px}
+
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr}
+    .sidebar{display:none}
+    .g4{grid-template-columns:1fr 1fr}
+    .g2{grid-template-columns:1fr}
+    .chat-list{display:none}
+    .search{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- Màn hình đăng nhập -->
+<div class="login" id="login">
+  <div class="card login-card">
+    <div class="logo"><i>K</i> KnowledgeHub</div>
+    <p>Hỏi đáp tri thức nội bộ doanh nghiệp</p>
+    <button class="btn primary" style="width:100%;padding:10px" onclick="hideLogin()">Đăng nhập bằng tài khoản công ty (SSO)</button>
+    <div class="divider">hoặc</div>
+    <div class="field"><label>Email công ty</label><input class="input" placeholder="ten.ho@congty.vn"></div>
+    <div class="field"><label>Mật khẩu</label><input class="input" type="password" placeholder="••••••••"></div>
+    <button class="btn" style="width:100%;padding:10px" onclick="hideLogin()">Đăng nhập</button>
+  </div>
+</div>
+
+<div class="app">
+  <!-- Thanh bên -->
+  <aside class="sidebar">
+    <div class="logo"><i>K</i> KnowledgeHub</div>
+    <nav class="nav">
+      <div class="nav-label">Người dùng</div>
+      <a class="active" data-view="chat"><span>💬</span> Hỏi đáp</a>
+      <div class="nav-label">Quản lý tri thức</div>
+      <a data-view="docs"><span>📄</span> Nguồn và tài liệu</a>
+      <a data-view="gaps"><span>❓</span> Câu hỏi chưa trả lời <span class="badge warn">12</span></a>
+      <a data-view="report"><span>📊</span> Báo cáo chất lượng</a>
+      <div class="nav-label">Quản trị hệ thống</div>
+      <a data-view="admin"><span>🛡️</span> Người dùng và nhật ký</a>
+      <a onclick="showLogin()"><span>🔑</span> Màn hình đăng nhập</a>
+    </nav>
+    <div class="side-foot">
+      <div class="avatar">NV</div>
+      <div><b>Nguyễn Văn An</b><small>Phòng Kinh doanh</small></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <h1 id="title">Hỏi đáp</h1>
+      <div class="sp"></div>
+      <div class="search">🔍 <input placeholder="Tìm tài liệu, câu hỏi..."></div>
+      <button class="btn sm">🔔</button>
+    </header>
+
+    <main class="content">
+
+      <!-- 1. Hỏi đáp -->
+      <section class="view chat active" id="v-chat">
+        <div class="chat-list">
+          <button class="btn primary">+ Cuộc hội thoại mới</button>
+          <div class="nav-label" style="padding-left:0">Hôm nay</div>
+          <div class="chat-item active">Quy trình xin nghỉ phép dài ngày</div>
+          <div class="chat-item">Hạn mức phê duyệt chi phí</div>
+          <div class="nav-label" style="padding-left:0">Tuần trước</div>
+          <div class="chat-item">Chính sách bảo hành sản phẩm</div>
+          <div class="chat-item">Hướng dẫn cài VPN</div>
+          <div class="chat-item">Mẫu hợp đồng đối tác</div>
+        </div>
+        <div class="chat-pane">
+          <div class="chat-scroll">
+            <div class="chat-inner">
+              <div class="msg user"><div class="bubble-u">Quy trình xin nghỉ phép dài ngày gồm những bước nào?</div></div>
+
+              <div class="msg">
+                <div class="bot-ico">K</div>
+                <div class="bubble-b">
+                  <p>Nghỉ phép từ 5 ngày liên tiếp trở lên cần thực hiện theo các bước sau:</p>
+                  <ol>
+                    <li>Gửi đơn xin nghỉ trên hệ thống nhân sự ít nhất 14 ngày trước ngày nghỉ<span class="cite">1</span></li>
+                    <li>Quản lý trực tiếp phê duyệt, sau đó trưởng bộ phận xác nhận<span class="cite">1</span></li>
+                    <li>Bàn giao công việc cho người thay thế và cập nhật vào biểu mẫu bàn giao<span class="cite">2</span></li>
+                  </ol>
+                  <p class="muted" style="font-size:13px">Lưu ý: trường hợp nghỉ ốm hoặc việc gia đình đột xuất áp dụng quy trình riêng.</p>
+                  <div class="sources">
+                    <h4>Nguồn tham khảo</h4>
+                    <div class="src"><span class="cite" style="margin:2px 0 0">1</span><div><b>Quy chế nghỉ phép 2026.pdf</b><small>Mục 3.2 · Phiên bản 4.1 · Hiệu lực từ 01/01/2026 · Phòng Nhân sự</small></div></div>
+                    <div class="src"><span class="cite" style="margin:2px 0 0">2</span><div><b>Biểu mẫu bàn giao công việc</b><small>Wiki nội bộ · Cập nhật 12/09/2026 · Phòng Nhân sự</small></div></div>
+                  </div>
+                  <div class="feedback">Câu trả lời có hữu ích không?
+                    <button class="btn sm">👍 Hữu ích</button><button class="btn sm">👎 Chưa tốt</button><button class="btn sm">⚑ Báo lỗi nội dung</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="msg user"><div class="bubble-u">Còn trường hợp nghỉ thai sản thì sao?</div></div>
+
+              <div class="msg">
+                <div class="bot-ico">K</div>
+                <div class="bubble-b">
+                  <div class="refuse"><b>Chưa tìm thấy đủ thông tin để trả lời.</b><br>Hệ thống chưa có tài liệu về chế độ thai sản trong phạm vi bạn được xem. Bạn có thể liên hệ <b>Phòng Nhân sự (nhansu@congty.vn)</b>. Câu hỏi này đã được ghi nhận để bổ sung tri thức.</div>
+                  <div class="feedback">
+                    <button class="btn sm">👍 Hữu ích</button><button class="btn sm">👎 Chưa tốt</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="composer">
+            <div class="composer-in">
+              <div class="chips"><span class="chip">Phạm vi: Tất cả bộ phận ▾</span><span class="chip">Loại tài liệu: Tất cả ▾</span><span class="chip">Tiếng Việt ▾</span></div>
+              <div class="box"><textarea rows="1" placeholder="Nhập câu hỏi của bạn..."></textarea><button class="btn primary">Gửi</button></div>
+              <div class="hint">Câu trả lời được tạo từ tài liệu nội bộ bạn có quyền xem. Hãy kiểm tra nguồn trích dẫn trước khi áp dụng.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Nguồn và tài liệu -->
+      <section class="view" id="v-docs">
+        <div class="page-head">
+          <div><h2>Nguồn và tài liệu</h2><p>Quản lý nguồn dữ liệu, lịch đồng bộ và trạng thái từng tài liệu.</p></div>
+          <div class="sp"></div>
+          <button class="btn">Đồng bộ ngay</button>
+          <button class="btn primary">+ Thêm nguồn dữ liệu</button>
+        </div>
+
+        <div class="grid g4" style="margin-bottom:16px">
+          <div class="card stat"><small>Nguồn đang kết nối</small><strong>4</strong><span class="badge ok">Hoạt động tốt</span></div>
+          <div class="card stat"><small>Tổng số tài liệu</small><strong>2.318</strong><span class="badge">+46 tuần này</span></div>
+          <div class="card stat"><small>Lỗi khi nạp</small><strong>7</strong><span class="badge bad">Cần xử lý</span></div>
+          <div class="card stat"><small>Sắp hết hạn rà soát</small><strong>19</strong><span class="badge warn">Trong 30 ngày</span></div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-h"><h3>Nguồn dữ liệu</h3></div>
+          <table>
+            <thead><tr><th>Nguồn</th><th>Loại</th><th>Tài liệu</th><th>Lịch đồng bộ</th><th>Lần cuối</th><th>Trạng thái</th><th>Bật</th></tr></thead>
+            <tbody>
+              <tr><td><b>Wiki nội bộ</b></td><td>Wiki</td><td>842</td><td>Mỗi giờ</td><td>14:00 hôm nay</td><td><span class="badge ok">Thành công</span></td><td><span class="tg on"></span></td></tr>
+              <tr><td><b>Thư mục chia sẻ Nhân sự</b></td><td>Thư mục</td><td>516</td><td>Mỗi 6 giờ</td><td>12:00 hôm nay</td><td><span class="badge ok">Thành công</span></td><td><span class="tg on"></span></td></tr>
+              <tr><td><b>Hệ thống ticket hỗ trợ</b></td><td>Ticket</td><td>960</td><td>Hằng ngày</td><td>02:00 hôm nay</td><td><span class="badge warn">3 cảnh báo</span></td><td><span class="tg on"></span></td></tr>
+              <tr><td><b>Email nhóm Pháp chế</b></td><td>Email</td><td>0</td><td>Chưa cấu hình</td><td>-</td><td><span class="badge">Tắt</span></td><td><span class="tg"></span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>Tài liệu</h3><div style="flex:1"></div>
+            <select class="select"><option>Mọi trạng thái</option></select>
+            <select class="select"><option>Mọi bộ phận</option></select>
+            <input class="input" placeholder="Tìm theo tên tài liệu">
+          </div>
+          <table>
+            <thead><tr><th>Tên tài liệu</th><th>Bộ phận</th><th>Chủ sở hữu</th><th>Mức bảo mật</th><th>Hiệu lực</th><th>Trạng thái</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><b>Quy chế nghỉ phép 2026.pdf</b><br><small class="muted">Phiên bản 4.1</small></td><td>Nhân sự</td><td>Trần Thu Hà</td><td><span class="badge brand">Nội bộ</span></td><td>01/01/2026</td><td><span class="badge ok">Hiệu lực</span></td><td><button class="btn sm">Xem</button></td></tr>
+              <tr><td><b>Quy trình mua hàng.docx</b><br><small class="muted">Phiên bản 2.0</small></td><td>Mua hàng</td><td>Lê Minh Quân</td><td><span class="badge brand">Nội bộ</span></td><td>15/03/2026</td><td><span class="badge warn">Sắp hết hạn rà soát</span></td><td><button class="btn sm">Xem</button></td></tr>
+              <tr><td><b>Chính sách lương thưởng.xlsx</b><br><small class="muted">Phiên bản 1.3</small></td><td>Nhân sự</td><td>Trần Thu Hà</td><td><span class="badge bad">Hạn chế</span></td><td>01/02/2026</td><td><span class="badge ok">Hiệu lực</span></td><td><button class="btn sm">Xem</button></td></tr>
+              <tr><td><b>Hướng dẫn VPN (cũ).pdf</b><br><small class="muted">Phiên bản 1.0</small></td><td>CNTT</td><td>Phạm Đức Long</td><td><span class="badge brand">Nội bộ</span></td><td>10/05/2024</td><td><span class="badge">Hết hiệu lực</span></td><td><button class="btn sm">Xem</button></td></tr>
+              <tr><td><b>Bảng giá dịch vụ (bản quét).pdf</b><br><small class="muted">Lỗi nhận dạng chữ</small></td><td>Kinh doanh</td><td>Hoàng Mai</td><td><span class="badge brand">Nội bộ</span></td><td>-</td><td><span class="badge bad">Lỗi xử lý</span></td><td><button class="btn sm">Thử lại</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 3. Câu hỏi chưa trả lời -->
+      <section class="view" id="v-gaps">
+        <div class="page-head">
+          <div><h2>Câu hỏi chưa trả lời được</h2><p>Các câu hỏi bị từ chối hoặc đánh giá thấp. Bổ sung tài liệu hoặc soạn câu trả lời chuẩn.</p></div>
+          <div class="sp"></div>
+          <select class="select"><option>7 ngày qua</option></select>
+          <select class="select"><option>Mọi chủ đề</option></select>
+        </div>
+        <div class="card">
+          <table>
+            <thead><tr><th>Câu hỏi</th><th>Chủ đề</th><th>Số lần hỏi</th><th>Lý do</th><th>Phụ trách</th><th>Trạng thái</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><b>Chế độ nghỉ thai sản của nhân viên nam là gì?</b></td><td>Nhân sự</td><td>14</td><td><span class="badge warn">Không có tài liệu</span></td><td>Trần Thu Hà</td><td><span class="badge">Mới</span></td><td><button class="btn sm primary">Xử lý</button></td></tr>
+              <tr><td><b>Cách xin cấp quyền truy cập hệ thống kế toán?</b></td><td>CNTT</td><td>9</td><td><span class="badge bad">Đánh giá thấp</span></td><td>Phạm Đức Long</td><td><span class="badge brand">Đang xử lý</span></td><td><button class="btn sm primary">Xử lý</button></td></tr>
+              <tr><td><b>Hạn mức công tác phí đi nước ngoài?</b></td><td>Tài chính</td><td>6</td><td><span class="badge warn">Không có tài liệu</span></td><td>Chưa gán</td><td><span class="badge">Mới</span></td><td><button class="btn sm primary">Xử lý</button></td></tr>
+              <tr><td><b>Thời hạn bảo hành dòng sản phẩm X200?</b></td><td>Kinh doanh</td><td>5</td><td><span class="badge bad">Tài liệu mâu thuẫn</span></td><td>Hoàng Mai</td><td><span class="badge brand">Đang xử lý</span></td><td><button class="btn sm primary">Xử lý</button></td></tr>
+              <tr><td><b>Mẫu đơn đề nghị thanh toán tạm ứng ở đâu?</b></td><td>Tài chính</td><td>4</td><td><span class="badge warn">Không đủ bằng chứng</span></td><td>Lê Minh Quân</td><td><span class="badge ok">Đã có FAQ</span></td><td><button class="btn sm">Xem</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 4. Báo cáo chất lượng -->
+      <section class="view" id="v-report">
+        <div class="page-head">
+          <div><h2>Báo cáo chất lượng</h2><p>Theo dõi mức sử dụng, chất lượng câu trả lời và khoảng trống tri thức.</p></div>
+          <div class="sp"></div>
+          <select class="select"><option>30 ngày qua</option></select>
+          <button class="btn">Xuất báo cáo</button>
+        </div>
+
+        <div class="grid g4" style="margin-bottom:16px">
+          <div class="card stat"><small>Số câu hỏi</small><strong>8.420</strong><span class="badge ok">▲ 12% so với kỳ trước</span></div>
+          <div class="card stat"><small>Tỷ lệ trả lời được</small><strong>87%</strong><span class="badge ok">▲ 3 điểm</span></div>
+          <div class="card stat"><small>Mức hài lòng</small><strong>74%</strong><span class="badge warn">▼ 1 điểm</span></div>
+          <div class="card stat"><small>Người dùng hoạt động tuần</small><strong>412</strong><span class="badge">34% nhân viên</span></div>
+        </div>
+
+        <div class="grid g2" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-h"><h3>Số câu hỏi theo tuần</h3></div>
+            <div class="card-b" style="padding-bottom:36px">
+              <div class="bars">
+                <div style="height:42%"><span>T1</span></div>
+                <div style="height:55%"><span>T2</span></div>
+                <div style="height:61%"><span>T3</span></div>
+                <div style="height:58%"><span>T4</span></div>
+                <div style="height:72%"><span>T5</span></div>
+                <div style="height:80%"><span>T6</span></div>
+                <div style="height:94%"><span>T7</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>Chủ đề hỏi nhiều</h3></div>
+            <div class="card-b">
+              <div class="bar-row"><span class="lbl">Nhân sự</span><div class="track"><i style="width:82%"></i></div><span class="num">2.1k</span></div>
+              <div class="bar-row"><span class="lbl">CNTT</span><div class="track"><i style="width:64%"></i></div><span class="num">1.6k</span></div>
+              <div class="bar-row"><span class="lbl">Tài chính</span><div class="track"><i style="width:48%"></i></div><span class="num">1.2k</span></div>
+              <div class="bar-row"><span class="lbl">Kinh doanh</span><div class="track"><i style="width:38%"></i></div><span class="num">950</span></div>
+              <div class="bar-row"><span class="lbl">Pháp chế</span><div class="track"><i style="width:18%"></i></div><span class="num">440</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>Chỉ số đánh giá trên bộ câu hỏi chuẩn</h3></div>
+          <table>
+            <thead><tr><th>Chỉ số</th><th>Giá trị hiện tại</th><th>Chỉ tiêu</th><th>Kết quả</th></tr></thead>
+            <tbody>
+              <tr><td>Recall@5 (truy xuất)</td><td>91%</td><td>≥ 90%</td><td><span class="badge ok">Đạt</span></td></tr>
+              <tr><td>Độ bám nguồn</td><td>96%</td><td>≥ 95%</td><td><span class="badge ok">Đạt</span></td></tr>
+              <tr><td>Độ đúng của câu trả lời</td><td>83%</td><td>≥ 85%</td><td><span class="badge warn">Chưa đạt</span></td></tr>
+              <tr><td>Tỷ lệ từ chối đúng</td><td>92%</td><td>≥ 90%</td><td><span class="badge ok">Đạt</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 5. Quản trị -->
+      <section class="view" id="v-admin">
+        <div class="page-head">
+          <div><h2>Người dùng và nhật ký kiểm toán</h2><p>Quản lý nhóm quyền, cấu hình mô hình và xem lịch sử hoạt động.</p></div>
+          <div class="sp"></div>
+          <button class="btn primary">+ Thêm nhóm quyền</button>
+        </div>
+
+        <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+          <div class="card">
+            <div class="card-h"><h3>Nhóm quyền</h3></div>
+            <table>
+              <thead><tr><th>Nhóm</th><th>Thành viên</th><th>Phạm vi tài liệu</th></tr></thead>
+              <tbody>
+                <tr><td><b>Toàn công ty</b></td><td>1.210</td><td>Nội bộ</td></tr>
+                <tr><td><b>Phòng Nhân sự</b></td><td>14</td><td>Nội bộ, Hạn chế (Nhân sự)</td></tr>
+                <tr><td><b>Ban Giám đốc</b></td><td>6</td><td>Mọi mức</td></tr>
+                <tr><td><b>Quản trị tri thức</b></td><td>5</td><td>Quản lý nguồn</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-h"><h3>Cấu hình mô hình</h3></div>
+            <div class="card-b">
+              <div class="field"><label>Mô hình sinh câu trả lời</label><select class="select" style="width:100%"><option>Mô hình LLM đang chọn</option></select></div>
+              <div class="field"><label>Mô hình nhúng (embedding)</label><select class="select" style="width:100%"><option>Hỗ trợ tiếng Việt</option></select></div>
+              <div class="row" style="justify-content:space-between;margin-bottom:8px"><span>Bắt buộc trích dẫn nguồn</span><span class="tg on"></span></div>
+              <div class="row" style="justify-content:space-between;margin-bottom:8px"><span>Từ chối khi thiếu bằng chứng</span><span class="tg on"></span></div>
+              <div class="row" style="justify-content:space-between"><span>Che dữ liệu nhạy cảm</span><span class="tg on"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><h3>Nhật ký kiểm toán</h3><div style="flex:1"></div>
+            <select class="select"><option>Hôm nay</option></select>
+            <input class="input" placeholder="Tìm theo người dùng">
+            <button class="btn">Xuất nhật ký</button>
+          </div>
+          <table>
+            <thead><tr><th>Thời gian</th><th>Người dùng</th><th>Hành động</th><th>Chi tiết</th><th>Kết quả</th></tr></thead>
+            <tbody>
+              <tr><td>14:21:07</td><td>an.nv@congty.vn</td><td>Đặt câu hỏi</td><td>3 nguồn được truy xuất</td><td><span class="badge ok">Đã trả lời</span></td></tr>
+              <tr><td>14:18:52</td><td>ha.tt@congty.vn</td><td>Sửa tài liệu</td><td>Quy chế nghỉ phép 2026.pdf</td><td><span class="badge ok">Thành công</span></td></tr>
+              <tr><td>14:10:33</td><td>mai.h@congty.vn</td><td>Đặt câu hỏi</td><td>Không đủ bằng chứng</td><td><span class="badge warn">Từ chối</span></td></tr>
+              <tr><td>13:57:19</td><td>long.pd@congty.vn</td><td>Đổi lịch đồng bộ</td><td>Wiki nội bộ: mỗi giờ</td><td><span class="badge ok">Thành công</span></td></tr>
+              <tr><td>13:42:01</td><td>khach.x@congty.vn</td><td>Truy cập tài liệu</td><td>Chính sách lương thưởng.xlsx</td><td><span class="badge bad">Bị chặn do vượt quyền</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // Chỉ chuyển qua lại giữa các màn hình để xem giao diện (chưa có chức năng nghiệp vụ)
+  const titles = {chat:'Hỏi đáp',docs:'Nguồn và tài liệu',gaps:'Câu hỏi chưa trả lời',report:'Báo cáo chất lượng',admin:'Người dùng và nhật ký'};
+  document.querySelectorAll('.nav a[data-view]').forEach(a=>{
+    a.addEventListener('click',()=>{
+      document.querySelectorAll('.nav a').forEach(x=>x.classList.remove('active'));
+      a.classList.add('active');
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      document.getElementById('v-'+a.dataset.view).classList.add('active');
+      document.getElementById('title').textContent = titles[a.dataset.view];
+    });
+  });
+  function showLogin(){document.getElementById('login').classList.add('active')}
+  function hideLogin(){document.getElementById('login').classList.remove('active')}
+</script>
+</body>
+</html>
